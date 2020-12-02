@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spring MVC Handler参数封装 | Gridea</title>
-<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1606886212065">
+<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1606887557562">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://biubangboom.github.io//styles/main.css">
 <link rel="alternate" type="application/atom+xml" title="Spring MVC Handler参数封装 | Gridea - Atom Feed" href="https://biubangboom.github.io//atom.xml">
@@ -13,9 +13,9 @@
 
     <meta name="description" content="入口
 今早看在mica的xss封装。
-发现用到了一个叫DataBind的注解。发现自己的能力还差很多阿。
+发现用到了一个叫InitBinder的注解。发现自己的能力还差很多阿。
 先记录一下涉及的知识点。
-ControllerAdvice，@DataBinder，PropertyEditorSupport，Pro..." />
+ControllerAdvice，PropertyEditor，PropertyEditorSuppor..." />
     <meta name="keywords" content="" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
     <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
@@ -25,7 +25,7 @@ ControllerAdvice，@DataBinder，PropertyEditorSupport，Pro..." />
       <div class="main-content">
         <div class="site-header">
   <a href="https://biubangboom.github.io/">
-  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1606886212065" alt="">
+  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1606887557562" alt="">
   </a>
   <h1 class="site-title">
     Gridea
@@ -85,7 +85,7 @@ ControllerAdvice，@DataBinder，PropertyEditorSupport，Pro..." />
                 2020-12-02
               </span>
               <span>
-                4 min read
+                5 min read
               </span>
               
             </div>
@@ -94,10 +94,17 @@ ControllerAdvice，@DataBinder，PropertyEditorSupport，Pro..." />
               <div class="post-content">
                 <h1 id="入口">入口</h1>
 <p>今早看在mica的xss封装。</p>
-<p>发现用到了一个叫<code>DataBind</code>的注解。发现自己的能力还差很多阿。</p>
+<p>发现用到了一个叫<code>InitBinder</code>的注解。发现自己的能力还差很多阿。</p>
 <p>先记录一下涉及的知识点。</p>
-<p><code>ControllerAdvice</code>，<code>@DataBinder</code>，<code>PropertyEditorSupport</code>，<code>PropertyManager</code>，<code>WebDataBinder</code></p>
-<p>比较关键在于这个<code>DataBinder</code>，其实可以理解为是为KV类的ArugmentSolver的提供的拓展功能。</p>
+<p><code>ControllerAdvice</code>，<code>PropertyEditor</code>，<code>PropertyEditorSupport</code>，<code>PropertyManager</code>，<code>WebDataBinder</code></p>
+<p>比较关心的是通过<code>@InitBinder</code>注册进<code>WebDataBinder</code>的<code>StringPropertiesEditor</code>什么时候会执行。</p>
+<p>结论：<code>WebDataBinder</code>其实可以理解为是KV等类型的一个处理流程，通过<code>AbstractNameValueArugmentSolver</code>的<code>ArguemntSolver</code>调用，所以没有脱离ArgumentSolver的范围，并且继承自该抽象类的方法都会调用对应的WebDataBinder。<br>
+后记：：<code>AbstractNameValueArugmentSolver</code>为子类预留了<code>handleResolvedValue</code>方法拓展。</p>
+<p>另外，MVC关于DataBinder的传参等依旧是很复杂（<code>WebDataBinderFactory</code>）的。</p>
+<p>WebDataBinder的调用则是通过调用<code>PropertyEditor</code>实现。（PropertyEditorSupport为子类，实现了<code>PropertyEditor</code>接口大部分了方法。）</p>
+<pre><code class="language-java">// editor为在WebDataBinder中registCustom的自定义编辑器。
+convertedValue = doConvertValue(oldValue, convertedValue, requiredType, editor);
+</code></pre>
 <blockquote>
 <pre><code class="language-java">// 类信息
 public class DataBinder implements PropertyEditorRegistry, TypeConverter

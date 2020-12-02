@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Gridea</title>
-    <updated>2020-12-02T05:16:54.485Z</updated>
+    <updated>2020-12-02T05:39:21.848Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -18,10 +18,17 @@
         <updated>2020-12-02T05:11:54.000Z</updated>
         <content type="html"><![CDATA[<h1 id="入口">入口</h1>
 <p>今早看在mica的xss封装。</p>
-<p>发现用到了一个叫<code>DataBind</code>的注解。发现自己的能力还差很多阿。</p>
+<p>发现用到了一个叫<code>InitBinder</code>的注解。发现自己的能力还差很多阿。</p>
 <p>先记录一下涉及的知识点。</p>
-<p><code>ControllerAdvice</code>，<code>@DataBinder</code>，<code>PropertyEditorSupport</code>，<code>PropertyManager</code>，<code>WebDataBinder</code></p>
-<p>比较关键在于这个<code>DataBinder</code>，其实可以理解为是为KV类的ArugmentSolver的提供的拓展功能。</p>
+<p><code>ControllerAdvice</code>，<code>PropertyEditor</code>，<code>PropertyEditorSupport</code>，<code>PropertyManager</code>，<code>WebDataBinder</code></p>
+<p>比较关心的是通过<code>@InitBinder</code>注册进<code>WebDataBinder</code>的<code>StringPropertiesEditor</code>什么时候会执行。</p>
+<p>结论：<code>WebDataBinder</code>其实可以理解为是KV等类型的一个处理流程，通过<code>AbstractNameValueArugmentSolver</code>的<code>ArguemntSolver</code>调用，所以没有脱离ArgumentSolver的范围，并且继承自该抽象类的方法都会调用对应的WebDataBinder。<br>
+后记：：<code>AbstractNameValueArugmentSolver</code>为子类预留了<code>handleResolvedValue</code>方法拓展。</p>
+<p>另外，MVC关于DataBinder的传参等依旧是很复杂（<code>WebDataBinderFactory</code>）的。</p>
+<p>WebDataBinder的调用则是通过调用<code>PropertyEditor</code>实现。（PropertyEditorSupport为子类，实现了<code>PropertyEditor</code>接口大部分了方法。）</p>
+<pre><code class="language-java">// editor为在WebDataBinder中registCustom的自定义编辑器。
+convertedValue = doConvertValue(oldValue, convertedValue, requiredType, editor);
+</code></pre>
 <blockquote>
 <pre><code class="language-java">// 类信息
 public class DataBinder implements PropertyEditorRegistry, TypeConverter
