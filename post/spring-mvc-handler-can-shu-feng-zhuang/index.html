@@ -1,0 +1,278 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spring MVC Handler参数封装 | Gridea</title>
+<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1606885972697">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://biubangboom.github.io//styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="Spring MVC Handler参数封装 | Gridea - Atom Feed" href="https://biubangboom.github.io//atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="入口
+今早看在mica的xss封装。
+发现用到了一个叫DataBind的注解。发现自己的能力还差很多阿。
+先记录一下涉及的知识点。
+ControllerAdvice，@DataBinder，PropertyEditorSupport，Pro..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://biubangboom.github.io/">
+  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1606885972697" alt="">
+  </a>
+  <h1 class="site-title">
+    Gridea
+  </h1>
+  <p class="site-description">
+    温故而知新
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Spring MVC Handler参数封装
+            </h2>
+            <div class="post-info">
+              <span>
+                2020-12-02
+              </span>
+              <span>
+                4 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <h1 id="入口">入口</h1>
+<p>今早看在mica的xss封装。</p>
+<p>发现用到了一个叫<code>DataBind</code>的注解。发现自己的能力还差很多阿。</p>
+<p>先记录一下涉及的知识点。</p>
+<p><code>ControllerAdvice</code>，<code>@DataBinder</code>，<code>PropertyEditorSupport</code>，<code>PropertyManager</code>，<code>WebDataBinder</code></p>
+<p>比较关键在于这个<code>DataBinder</code>，其实可以理解为是为KV类的ArugmentSolver的提供的拓展功能。</p>
+<blockquote>
+<pre><code class="language-java">// 类信息
+public class DataBinder implements PropertyEditorRegistry, TypeConverter
+</code></pre>
+</blockquote>
+<p>之前没有做出过使用。</p>
+<p><code>DataBinder</code>通过与ControllerAdvice配合使用。</p>
+<blockquote>
+<p>关于ControllerAdcice的介绍</p>
+<p>Specialization of {@link Component @Component} for classes that declare{@link ExceptionHandler @ExceptionHandler}, {@link InitBinder @InitBinder}, or{@link ModelAttribute @ModelAttribute} methods to be shared across multiple {@code @Controller} classes.</p>
+<p>简意：一个Component的特殊类，可用于声明（定义方法）<code>@ExceptionHandler</code>，<code>@InitBinder</code>，@<code>ModelAttribute</code>。<br>
+method被多个Controller类共享（Controller全局）。</p>
+<p>关于@ModelAttribute还不清楚作用。</p>
+</blockquote>
+<p><code>ControllerAdvice</code>的<code>InitBinder</code>即是本次的入口。</p>
+<blockquote>
+<p>关于InitBinder的介绍</p>
+<p>Annotation that identifies methods which initialize the {@link org.springframework.web.bind.WebDataBinder} which will be used for populating command and form object arguments of annotated handler methods.</p>
+<p>简意：注解会通过<code>WebDataBinder</code>进行初始化。用于填充接口的command和form类型参数。</p>
+<p>typical arguments are {@link org.springframework.web.bind.WebDataBinder} in combination with {@link org.springframework.web.context.request.WebRequest} or {@link java.util.Locale}, allowing to register context-specific editors.</p>
+<p>简意：@InitBinder注解作用在方法上，方法可传入参数WebDataBinder，WebRequest，Locale辅助使用。<br>
+其中<code>WebDataBinder</code>是关键，可用于实现DataBinder的注册。</p>
+</blockquote>
+<hr>
+<h1 id="参数封装流程">参数封装流程</h1>
+<p>这是之前为了追踪，如何将请求的参数（form、path variable，requestBody等）封装成对应的类型的属性或对象而进行的追踪，但当时没有完成，也缺少了<code>DataBind</code>这部分的数据处理。</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9eq3m6iqj317t044q3e.jpg" alt="image-20200323024355131" loading="lazy"></figure>
+<p>在HandlerAdapter.Handle()方法中，对request的param进行成handler所需的对象。（这一行方法其实执行了很多，只是最后得到了model and view罢了，中间蛮多过程且不太好追踪。）</p>
+<p>其实基本的入口是没有找错的：<code>invocableMethod.invokeAndHandle(webRequest, mavContainer);</code></p>
+<p><code>InvocableHandlerMethod</code>方法参数封装入口<br>
+<img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9eq569m3j31fh0u0doq.jpg" alt="image-20200323024802095" loading="lazy"></p>
+<p>解析逻辑</p>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9fj3fmmfj31270ebtc2.jpg" alt="image-20201202130632894" loading="lazy"></figure>
+<p>获取解析器的逻辑：<code>HandlerMethodArgumentResolverComposite</code><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9eq490mkj31en0o6q99.jpg" alt="image-20200323023101703" loading="lazy"><br>
+该类中含有<code>List&lt;HandlerMethodArgumentResolver&gt;</code>，包含了所有的参数解析器。<br>
+在方法<code>getArgumentResolver</code>下，对每个参数调用正确的参数解析器进行解析。</p>
+<p>其中包括<code>RequestAttributeMethodArgumentResolver</code> <code>RequestParamMethodArgumentResolver</code> <code>RequestParamMapMethodArgumentResolver</code> <code>ServletModelAttributeMethodProcessor</code> <code>RequestResponseBodyMethodProcessor</code><br>
+（RequestParam、RequestParamMap、ModelAttributeMethod、RequestBody）</p>
+<p>其他的都比较好理解，比较特殊的是**<code>ServletModelAttributeMethodProcessor</code>**，如果不带任何的注解、或是参数类型是简单类型，则会匹配上该方法，可以理解为是默认的。</p>
+<pre><code class="language-java">@Override
+	public boolean supportsParameter(MethodParameter parameter) {
+		return (parameter.hasParameterAnnotation(ModelAttribute.class) ||
+				(this.annotationNotRequired &amp;&amp; !BeanUtils.isSimpleProperty(parameter.getParameterType())));
+	}
+</code></pre>
+<p>同理，如果对象不带任何的注解=@ModelAttribute。（不同于@RequestAttribute）。</p>
+<p>同时发现可以使用<code>Map&lt;String,String&gt;</code>可以封装上所有的RequestParam，默认实现了。</p>
+<h1 id="总结">总结</h1>
+<p>竟然误解了。</p>
+<p>一直想追踪这个DataBinder与ArgumentResolver的执行顺序。</p>
+<p>但其实不是这样的。</p>
+<p>DataBinder的执行是在一个抽象类：<code>AbstractNamedValueMethodArgumentResolver</code>中，是其他的ArgumentResolver（kv类型等）的抽象类。</p>
+<blockquote>
+<p>抽象类的介绍：</p>
+<p>Abstract base class for resolving method arguments from a named value. Request parameters, request headers, and path variables are examples of named values. Each may have a name, a required flag, and a default value.</p>
+<p>简介：</p>
+<p>这个抽象类可以帮助方法解决一些kv类型的请求参数、请求头信息或者路径变量。</p>
+</blockquote>
+<figure data-type="image" tabindex="3"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9f7snlovj311d0djn1r.jpg" alt="image-20201202125610629" loading="lazy"></figure>
+<p>由该抽象类定义的方法（resolveArgument）实现对DataBinder的调用，同时预留<code>handleResolvedValue</code>方法交由实现类拓展。</p>
+<h1 id="资料">资料</h1>
+<p>补充关于mica xss-common的设置（文章入口来源）：</p>
+<pre><code class="language-java">@ControllerAdvice
+public class FormXssClean {
+
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+		// 处理前端传来的表单字符串
+		binder.registerCustomEditor(String.class, new StringPropertiesEditor());
+	}
+
+	@Slf4j
+	public static class StringPropertiesEditor extends PropertyEditorSupport {
+
+		@Override
+		public String getAsText() {
+			Object value = getValue();
+			return value != null ? value.toString() : StrUtil.EMPTY;
+		}
+
+		@Override
+		public void setAsText(String text) throws IllegalArgumentException {
+			if (text == null) {
+				setValue(null);
+			}
+			else if (XssHolder.isEnabled()) {
+				String value = XssUtil.clean(text);
+				setValue(value);
+				log.trace(&quot;Request parameter value:{} cleaned up by mica-xss, current value is:{}.&quot;, text, value);
+			}
+			else {
+				setValue(text);
+			}
+		}
+
+	}
+}
+</code></pre>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li><a href="#%E5%85%A5%E5%8F%A3">入口</a></li>
+<li><a href="#%E5%8F%82%E6%95%B0%E5%B0%81%E8%A3%85%E6%B5%81%E7%A8%8B">参数封装流程</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+<li><a href="#%E8%B5%84%E6%96%99">资料</a></li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://biubangboom.github.io/post/mybatis-ioc-zhui-zong/">
+              <h3 class="post-title">
+                Mybatis-IOC追踪
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://biubangboom.github.io//atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>
