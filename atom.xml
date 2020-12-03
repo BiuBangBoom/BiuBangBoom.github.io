@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Gridea</title>
-    <updated>2020-12-02T05:39:21.848Z</updated>
+    <updated>2020-12-03T02:21:37.987Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -17,8 +17,12 @@
         </link>
         <updated>2020-12-02T05:11:54.000Z</updated>
         <content type="html"><![CDATA[<h1 id="入口">入口</h1>
+<p>后续（2020年12月03日10:19:06）：整理资料发现对DataBinder，WebDataBinder的认识出现了错误，所以原文中关于DataBinder的介绍许多都是错的，但仍可借此关注SpringMVC入参流程。<br>
+DataBinder的源码文章：https://blog.csdn.net/f641385712/article/details/90702928</p>
+<hr>
 <p>今早看在mica的xss封装。</p>
 <p>发现用到了一个叫<code>InitBinder</code>的注解。发现自己的能力还差很多阿。</p>
+<hr>
 <p>先记录一下涉及的知识点。</p>
 <p><code>ControllerAdvice</code>，<code>PropertyEditor</code>，<code>PropertyEditorSupport</code>，<code>PropertyManager</code>，<code>WebDataBinder</code></p>
 <p>比较关心的是通过<code>@InitBinder</code>注册进<code>WebDataBinder</code>的<code>StringPropertiesEditor</code>什么时候会执行。</p>
@@ -90,6 +94,7 @@ method被多个Controller类共享（Controller全局）。</p>
 <figure data-type="image" tabindex="3"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9f7snlovj311d0djn1r.jpg" alt="image-20201202125610629" loading="lazy"></figure>
 <p>由该抽象类定义的方法（resolveArgument）实现对DataBinder的调用，同时预留<code>handleResolvedValue</code>方法交由实现类拓展。</p>
 <h1 id="资料">资料</h1>
+<p>https://blog.csdn.net/f641385712/article/details/90702928</p>
 <p>补充关于mica xss-common的设置（文章入口来源）：</p>
 <pre><code class="language-java">@ControllerAdvice
 public class FormXssClean {
