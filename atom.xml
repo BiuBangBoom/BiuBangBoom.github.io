@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Gridea</title>
-    <updated>2020-12-04T04:39:38.829Z</updated>
+    <updated>2020-12-04T14:46:11.443Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -62,6 +62,14 @@ ApplicationContext：可以理解为强化的BeanFactory，提供了BeanFactory�
         <content type="html"><![CDATA[<h1 id="入口">入口</h1>
 <p>后续（2020年12月03日10:19:06）：整理资料发现对DataBinder，WebDataBinder的认识出现了错误，所以原文中关于DataBinder的介绍许多都是错的，但仍可借此关注SpringMVC入参流程。<br>
 DataBinder的源码文章：https://blog.csdn.net/f641385712/article/details/90702928</p>
+<p>可以关联PropertyAccessor。DataBinder其实更像是一个组合工具，通过PropertyAccessor封装数据，再通过其他的组件进行validator，实现数据的valid以及property accessor功能。</p>
+<blockquote>
+<pre><code class="language-java">* Binder that allows for setting property values onto a target object,
+* including support for validation and binding result analysis.
+* The binding process can be customized through specifying allowed fields,
+* required fields, custom editors, etc.
+</code></pre>
+</blockquote>
 <hr>
 <p>今早看在mica的xss封装。</p>
 <p>发现用到了一个叫<code>InitBinder</code>的注解。发现自己的能力还差很多阿。</p>
@@ -71,6 +79,7 @@ DataBinder的源码文章：https://blog.csdn.net/f641385712/article/details/907
 <p>比较关心的是通过<code>@InitBinder</code>注册进<code>WebDataBinder</code>的<code>StringPropertiesEditor</code>什么时候会执行。</p>
 <p>结论：<code>WebDataBinder</code>其实可以理解为是KV等类型的一个处理流程，通过<code>AbstractNameValueArugmentSolver</code>的<code>ArguemntSolver</code>调用，所以没有脱离ArgumentSolver的范围，并且继承自该抽象类的方法都会调用对应的WebDataBinder。<br>
 后记：：<code>AbstractNameValueArugmentSolver</code>为子类预留了<code>handleResolvedValue</code>方法拓展。</p>
+<p>简述：其他的argumentSolver(pathVariable,modelAttribute)等其实都extends这个AbstractNameValueMethodArgumentResolver，这个抽象类会调用binder.convertIfNecessary，也就是自定义的initBinder方法。</p>
 <p>另外，MVC关于DataBinder的传参等依旧是很复杂（<code>WebDataBinderFactory</code>）的。</p>
 <p>WebDataBinder的调用则是通过调用<code>PropertyEditor</code>实现。（PropertyEditorSupport为子类，实现了<code>PropertyEditor</code>接口大部分了方法。）</p>
 <pre><code class="language-java">// editor为在WebDataBinder中registCustom的自定义编辑器。
@@ -136,6 +145,115 @@ method被多个Controller类共享（Controller全局）。</p>
 </blockquote>
 <figure data-type="image" tabindex="3"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1gl9f7snlovj311d0djn1r.jpg" alt="image-20201202125610629" loading="lazy"></figure>
 <p>由该抽象类定义的方法（resolveArgument）实现对DataBinder的调用，同时预留<code>handleResolvedValue</code>方法交由实现类拓展。</p>
+<hr>
+<p>似乎也不是如此，MVC的参数封装似乎都是通过ServletRequestDataBinder的对象进行实现，这个ServletRequestDataBinder extends WebDataBinder。</p>
+<pre><code class="language-java">MethodArugementResolve-&gt;resolveArgument-&gt;
+// 竟然是在这里处理的@initBinder
+// 而且处理流程也比较魔幻..
+WebDataBinder binder = binderFactory.createBinder(webRequest, attribute, name); 
+attribute = binder.convertIfNecessary(binder.getTarget(), parameter.getParameterType(), parameter);
+</code></pre>
+<p>每个参数的封装都会对应创建<code>ServletRequestDataBinder</code>，而这个<code>ServletRequestDataBinder</code>的init会通过Spring MVC中的WebDataBinder，<strong>是通过这个ServletRequestDataBinder对Handler的各参数进行独自封装。</strong></p>
+<pre><code class="language-java">	// DefaultDataBinderFactory中调用。
+	// 方法参数的`args[i]`的封装是通过这个`ServletRequestDataBinder`实现。
+	@Override
+	@SuppressWarnings(&quot;deprecation&quot;)
+	public final WebDataBinder createBinder(
+			NativeWebRequest webRequest, @Nullable Object target, String objectName) throws Exception {
+		// args[i] solver对应的dataBinder，ServletRequestDataBinder
+		WebDataBinder dataBinder = createBinderInstance(target, objectName, webRequest);
+		if (this.initializer != null) {
+			this.initializer.initBinder(dataBinder, webRequest);
+		}
+    // 这里竟然也是个关键，对应了@initMethod的处理
+		initBinder(dataBinder, webRequest); //ServletRequestDataBinderFactory
+		return dataBinder;
+	}
+</code></pre>
+<pre><code class="language-java">	// this.initializer.initBinder(dataBinder, webRequest);
+	// ServletRequestDataBinder的INIT过程之一
+	// 传入的binder其实就是MVC容器的WebDataBinder
+	@Override
+	public void initBinder(WebDataBinder binder) {
+		binder.setAutoGrowNestedPaths(this.autoGrowNestedPaths);
+		if (this.directFieldAccess) {
+			binder.initDirectFieldAccess();
+		}
+		if (this.messageCodesResolver != null) {
+			binder.setMessageCodesResolver(this.messageCodesResolver);
+		}
+		if (this.bindingErrorProcessor != null) {
+			binder.setBindingErrorProcessor(this.bindingErrorProcessor);
+		}
+		if (this.validator != null &amp;&amp; binder.getTarget() != null &amp;&amp;
+				this.validator.supports(binder.getTarget().getClass())) {
+			binder.setValidator(this.validator);
+		}
+		if (this.conversionService != null) {
+			binder.setConversionService(this.conversionService);
+		}
+		if (this.propertyEditorRegistrars != null) {
+			for (PropertyEditorRegistrar propertyEditorRegistrar : this.propertyEditorRegistrars) {
+				propertyEditorRegistrar.registerCustomEditors(binder);
+			}
+		}
+	}
+</code></pre>
+<pre><code class="language-java">	// 也是比较关键的一个方法，在InitBinderDataBinderFactory中执行。
+	/**
+	 * Initialize a WebDataBinder with {@code @InitBinder} methods.
+	 * &lt;p&gt;If the {@code @InitBinder} annotation specifies attributes names,
+	 * it is invoked only if the names include the target object name.
+	 * @throws Exception if one of the invoked @{@link InitBinder} methods fails
+	 * @see #isBinderMethodApplicable
+	 */
+	@Override
+	public void initBinder(WebDataBinder dataBinder, NativeWebRequest request) throws Exception {
+		// 获取被@InitMethod的方法
+    for (InvocableHandlerMethod binderMethod : this.binderMethods) {
+			if (isBinderMethodApplicable(binderMethod, dataBinder)) {
+        // 反射执行这些@InitMethod方法，也就是往这个RequestDataBinder中注册PropertyEditor(XSS)
+        // 这里执行其实比较魔幻，粗略可以理解成是把这个binderMethod方法当成普通的方法执行，所以也会有对这个普通方法进行argument resolve的过程（类似于处理handler）。
+				Object returnValue = binderMethod.invokeForRequest(request, null, dataBinder);
+				if (returnValue != null) {
+					throw new IllegalStateException(
+							&quot;@InitBinder methods must not return a value (should be void): &quot; + binderMethod);
+				}
+			}
+		}
+	}
+</code></pre>
+<pre><code class="language-java">	/**
+	 * Invoke the method after resolving its argument values in the context of the given request.
+	 * &lt;p&gt;Argument values are commonly resolved through
+	 * {@link HandlerMethodArgumentResolver HandlerMethodArgumentResolvers}.
+	 * The {@code providedArgs} parameter however may supply argument values to be used directly,
+	 * i.e. without argument resolution. Examples of provided argument values include a
+	 * {@link WebDataBinder}, a {@link SessionStatus}, or a thrown exception instance.
+	 * Provided argument values are checked before argument resolvers.
+	 * &lt;p&gt;Delegates to {@link #getMethodArgumentValues} and calls {@link #doInvoke} with the
+	 * resolved arguments.
+	 * @param request the current request
+	 * @param mavContainer the ModelAndViewContainer for this request
+	 * @param providedArgs &quot;given&quot; arguments matched by type, not resolved
+	 * @return the raw value returned by the invoked method
+	 * @throws Exception raised if no suitable argument resolver can be found,
+	 * or if the method raised an exception
+	 * @see #getMethodArgumentValues
+	 * @see #doInvoke
+	 */
+	@Nullable
+	public Object invokeForRequest(NativeWebRequest request, @Nullable ModelAndViewContainer mavContainer,
+			Object... providedArgs) throws Exception {
+		
+		Object[] args = getMethodArgumentValues(request, mavContainer, providedArgs);
+		if (logger.isTraceEnabled()) {
+			logger.trace(&quot;Arguments: &quot; + Arrays.toString(args));
+		}
+		return doInvoke(args);
+	}
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glc5yd6yhoj317c0u0kf3.jpg" alt="image-20201204215153059" loading="lazy"></figure>
 <h1 id="资料">资料</h1>
 <p>https://blog.csdn.net/f641385712/article/details/90702928</p>
 <p>补充关于mica xss-common的设置（文章入口来源）：</p>
@@ -175,6 +293,46 @@ public class FormXssClean {
 	}
 }
 </code></pre>
+<h1 id="databinder">DataBinder</h1>
+<p>资料：https://blog.csdn.net/shenchaohao12321/article/details/80356890</p>
+<p>资料：https://blog.csdn.net/f641385712/article/details/90702928</p>
+<blockquote>
+<p>DataBinder实现了TypeConverter和PropertyEditorRegistry接口提供了类型转换功能，并且可以对目标对象字段做<a href="https://blog.csdn.net/shenchaohao12321/article/details/100163991">Validation</a>。</p>
+</blockquote>
+<pre><code class="language-java">	@Test
+	public void run() throws BindException {
+		Film film = new Film();
+		DataBinder dataBinder = new DataBinder(film,&quot;film&quot;);
+
+		MutablePropertyValues pvs = new MutablePropertyValues();
+		pvs.add(&quot;id&quot;, 1);
+		pvs.add(&quot;film&quot;, &quot;inception&quot;);
+
+		dataBinder.bind(pvs);
+		dataBinder.close();
+
+    // Film{id=1, film='inception'}
+		System.out.println(film);
+	}
+</code></pre>
+<hr>
+<h1 id="spring-mvc的默认conversionservice来源">Spring MVC的默认ConversionService来源</h1>
+<pre><code class="language-java">@Configuration
+class WebMvcConfigurationSupport{
+	/**
+	 * Return a {@link FormattingConversionService} for use with annotated controllers.
+	 * &lt;p&gt;See {@link #addFormatters} as an alternative to overriding this method.
+	 */
+	@Bean
+	public FormattingConversionService mvcConversionService() {
+		FormattingConversionService conversionService = new DefaultFormattingConversionService();
+		addFormatters(conversionService);
+		return conversionService;
+	}
+}
+</code></pre>
+<p>追踪了好一会儿。</p>
+<figure data-type="image" tabindex="5"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glbszbyljlj31pj0u0tn5.jpg" alt="image-20201204142332815" loading="lazy"></figure>
 ]]></content>
     </entry>
     <entry>
