@@ -1,0 +1,211 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ObjectFactory-BeanFactory-FactoryBean | Gridea</title>
+<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1607056765236">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://biubangboom.github.io//styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="ObjectFactory-BeanFactory-FactoryBean | Gridea - Atom Feed" href="https://biubangboom.github.io//atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="推荐参考资料：https://fangshixiang.blog.csdn.net/article/details/85067006
+BeanFactory ApplicationContext
+BeanFactory：bean工厂
+App..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://biubangboom.github.io/">
+  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1607056765236" alt="">
+  </a>
+  <h1 class="site-title">
+    Gridea
+  </h1>
+  <p class="site-description">
+    温故而知新
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              ObjectFactory-BeanFactory-FactoryBean
+            </h2>
+            <div class="post-info">
+              <span>
+                2020-12-04
+              </span>
+              <span>
+                2 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <p>推荐参考资料：https://fangshixiang.blog.csdn.net/article/details/85067006</p>
+<h1 id="beanfactory-applicationcontext">BeanFactory ApplicationContext</h1>
+<p>BeanFactory：bean工厂<br>
+ApplicationContext：可以理解为强化的BeanFactory，提供了BeanFactory的功能外，还提供了MessageSource，事务等功能。</p>
+<blockquote>
+<p><em>ApplicationContext包含BeanFactory的所有功能，通常建议比BeanFactory优先。</em></p>
+<p>ApplicationContext以一种<strong>更向面向框架的方式工作以及对上下文进行分层和实现继承</strong>，ApplicationContext包还提供了以下的功能：</p>
+<ul>
+<li>MessageSource, 提供国际化的消息访问</li>
+<li>资源访问，如URL和文件</li>
+<li>事件传播</li>
+<li>载入多个（有继承关系）上下文 ，使得每一个上下文都专<strong>注于一个特定的层次</strong>，比如应用的web层;</li>
+</ul>
+</blockquote>
+<hr>
+<h1 id="factorybean-objectfactory">FactoryBean ObjectFactory</h1>
+<p>还是比较有意思的点，但目前没有追踪Spring是如何对这两个类进行处理的，特别的ObjectFactory，是如何处理出Scope这一环境。</p>
+<h2 id="factorybean">FactoryBean</h2>
+<blockquote>
+<p>这是个特殊的 Bean 他是个工厂 Bean，可以产生 Bean 的 Bean</p>
+</blockquote>
+<p>使用其实也比较简单，将FactoryBean交由Spring管理即可，Spring会根据FactoryBean的属性（单例多例等），创建对应的Bean。</p>
+<p>所以可以直接注入FactoryBean对应的Bean。</p>
+<h2 id="objectfactory">ObjectFactory</h2>
+<p>不同于FactoryBean可以直接通过Spring获取对应的bean，<code>ObjectFactory</code>需要通过Spring注入后，再进行get操作获取bean。</p>
+<p>使用情况更多是与与Scope绑定，如<code>WebApplicationContextUtils#registerWebApplicationScopes()</code>中，注入了如Session、Request等ObjectFactory。</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glbpmuhy21j30za0j6jwm.jpg" alt="image-20201204122743075" loading="lazy"></figure>
+<pre><code class="language-java">	// @Resource ByName注入
+	@Resource
+	private ObjectFactory&lt;ServletRequest&gt; requestObjectFactory;
+
+	void method(){
+    ServletRequest request = requestObjectFactory.getObject();
+  }
+</code></pre>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li><a href="#beanfactory-applicationcontext">BeanFactory ApplicationContext</a></li>
+<li><a href="#factorybean-objectfactory">FactoryBean ObjectFactory</a>
+<ul>
+<li><a href="#factorybean">FactoryBean</a></li>
+<li><a href="#objectfactory">ObjectFactory</a></li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://biubangboom.github.io/post/spring-mvc-handler-can-shu-feng-zhuang/">
+              <h3 class="post-title">
+                Spring MVC Handler参数封装
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://biubangboom.github.io//atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>

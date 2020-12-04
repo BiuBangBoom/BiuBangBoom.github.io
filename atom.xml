@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Gridea</title>
-    <updated>2020-12-03T02:21:37.987Z</updated>
+    <updated>2020-12-04T04:39:38.829Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -10,6 +10,49 @@
     <logo>https://biubangboom.github.io/images/avatar.png</logo>
     <icon>https://biubangboom.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, Gridea</rights>
+    <entry>
+        <title type="html"><![CDATA[ObjectFactory-BeanFactory-FactoryBean]]></title>
+        <id>https://biubangboom.github.io/post/objectfactory-beanfactory-factorybean/</id>
+        <link href="https://biubangboom.github.io/post/objectfactory-beanfactory-factorybean/">
+        </link>
+        <updated>2020-12-04T04:39:13.000Z</updated>
+        <content type="html"><![CDATA[<p>推荐参考资料：https://fangshixiang.blog.csdn.net/article/details/85067006</p>
+<h1 id="beanfactory-applicationcontext">BeanFactory ApplicationContext</h1>
+<p>BeanFactory：bean工厂<br>
+ApplicationContext：可以理解为强化的BeanFactory，提供了BeanFactory的功能外，还提供了MessageSource，事务等功能。</p>
+<blockquote>
+<p><em>ApplicationContext包含BeanFactory的所有功能，通常建议比BeanFactory优先。</em></p>
+<p>ApplicationContext以一种<strong>更向面向框架的方式工作以及对上下文进行分层和实现继承</strong>，ApplicationContext包还提供了以下的功能：</p>
+<ul>
+<li>MessageSource, 提供国际化的消息访问</li>
+<li>资源访问，如URL和文件</li>
+<li>事件传播</li>
+<li>载入多个（有继承关系）上下文 ，使得每一个上下文都专<strong>注于一个特定的层次</strong>，比如应用的web层;</li>
+</ul>
+</blockquote>
+<hr>
+<h1 id="factorybean-objectfactory">FactoryBean ObjectFactory</h1>
+<p>还是比较有意思的点，但目前没有追踪Spring是如何对这两个类进行处理的，特别的ObjectFactory，是如何处理出Scope这一环境。</p>
+<h2 id="factorybean">FactoryBean</h2>
+<blockquote>
+<p>这是个特殊的 Bean 他是个工厂 Bean，可以产生 Bean 的 Bean</p>
+</blockquote>
+<p>使用其实也比较简单，将FactoryBean交由Spring管理即可，Spring会根据FactoryBean的属性（单例多例等），创建对应的Bean。</p>
+<p>所以可以直接注入FactoryBean对应的Bean。</p>
+<h2 id="objectfactory">ObjectFactory</h2>
+<p>不同于FactoryBean可以直接通过Spring获取对应的bean，<code>ObjectFactory</code>需要通过Spring注入后，再进行get操作获取bean。</p>
+<p>使用情况更多是与与Scope绑定，如<code>WebApplicationContextUtils#registerWebApplicationScopes()</code>中，注入了如Session、Request等ObjectFactory。</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glbpmuhy21j30za0j6jwm.jpg" alt="image-20201204122743075" loading="lazy"></figure>
+<pre><code class="language-java">	// @Resource ByName注入
+	@Resource
+	private ObjectFactory&lt;ServletRequest&gt; requestObjectFactory;
+
+	void method(){
+    ServletRequest request = requestObjectFactory.getObject();
+  }
+</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Spring MVC Handler参数封装]]></title>
         <id>https://biubangboom.github.io/post/spring-mvc-handler-can-shu-feng-zhuang/</id>
