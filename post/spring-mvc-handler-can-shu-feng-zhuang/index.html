@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spring MVC Handler参数封装 | Gridea</title>
-<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1607093167541">
+<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1607093882066">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://biubangboom.github.io//styles/main.css">
 <link rel="alternate" type="application/atom+xml" title="Spring MVC Handler参数封装 | Gridea - Atom Feed" href="https://biubangboom.github.io//atom.xml">
@@ -23,7 +23,7 @@ Data..." />
       <div class="main-content">
         <div class="site-header">
   <a href="https://biubangboom.github.io/">
-  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1607093167541" alt="">
+  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1607093882066" alt="">
   </a>
   <h1 class="site-title">
     Gridea
@@ -83,7 +83,7 @@ Data..." />
                 2020-12-02
               </span>
               <span>
-                10 min read
+                11 min read
               </span>
               
             </div>
@@ -178,6 +178,35 @@ method被多个Controller类共享（Controller全局）。</p>
 <p>由该抽象类定义的方法（resolveArgument）实现对DataBinder的调用，同时预留<code>handleResolvedValue</code>方法交由实现类拓展。</p>
 <hr>
 <p>似乎也不是如此，MVC的参数封装似乎都是通过ServletRequestDataBinder的对象进行实现，这个ServletRequestDataBinder extends WebDataBinder。</p>
+<h1 id="参数封装补充细节">参数封装补充细节</h1>
+<p>Handler参数的封装都是通过ArguementSolver进行处理，而ArgumentSolver内部封装了DataBinder，本质上就是调用DataBinder进行参数的封装。</p>
+<p><code>attribute = binder.convertIfNecessary(binder.getTarget(), parameter.getParameterType(), parameter);</code></p>
+<p>普遍的DataBinder内部是通过 <code>getTypeConverter().convertIfNecessary(value, requiredType, methodParam);</code>进行convert，而这个<code>TypeConverter</code>--&gt;SimpleTypeConverter。也就是调用<code>TypeConverterSupport</code>的<code>convertIfNecessary</code>方法进行转换。</p>
+<p><code>getTypeConverter().convertIfNecessary(value, requiredType, methodParam);</code></p>
+<p>大多数情况这个TypeConverter，其实就是<code>SimpleTypeConverter</code>，通过这个TypeConverter根据不同的情况调用PropertyEditor或者ConverterService进行转换。</p>
+<pre><code class="language-java">	/**
+	 * 这个SimpleTypeConverter其实就是已经封装了convertService进去，可供使用。
+	 * Return this binder's underlying SimpleTypeConverter.
+	 */
+	protected SimpleTypeConverter getSimpleTypeConverter() {
+		if (this.typeConverter == null) {
+			this.typeConverter = new SimpleTypeConverter();
+			if (this.conversionService != null) {
+				this.typeConverter.setConversionService(this.conversionService);
+			}
+		}
+		return this.typeConverter;
+	}
+
+public class SimpleTypeConverter extends TypeConverterSupport {
+
+	public SimpleTypeConverter() {
+		this.typeConverterDelegate = new TypeConverterDelegate(this);
+		registerDefaultEditors();
+	}
+
+}
+</code></pre>
 <pre><code class="language-java">MethodArugementResolve-&gt;resolveArgument-&gt;
 // 竟然是在这里处理的@initBinder
 // 而且处理流程也比较魔幻..
@@ -371,6 +400,7 @@ class WebMvcConfigurationSupport{
 <li><a href="#%E5%85%A5%E5%8F%A3">入口</a></li>
 <li><a href="#%E5%8F%82%E6%95%B0%E5%B0%81%E8%A3%85%E6%B5%81%E7%A8%8B">参数封装流程</a></li>
 <li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+<li><a href="#%E5%8F%82%E6%95%B0%E5%B0%81%E8%A3%85%E8%A1%A5%E5%85%85%E7%BB%86%E8%8A%82">参数封装补充细节</a></li>
 <li><a href="#%E8%B5%84%E6%96%99">资料</a></li>
 <li><a href="#databinder">DataBinder</a></li>
 <li><a href="#spring-mvc%E7%9A%84%E9%BB%98%E8%AE%A4conversionservice%E6%9D%A5%E6%BA%90">Spring MVC的默认ConversionService来源</a></li>

@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Gridea</title>
-    <updated>2020-12-04T14:46:11.443Z</updated>
+    <updated>2020-12-04T14:58:05.325Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -147,6 +147,35 @@ method被多个Controller类共享（Controller全局）。</p>
 <p>由该抽象类定义的方法（resolveArgument）实现对DataBinder的调用，同时预留<code>handleResolvedValue</code>方法交由实现类拓展。</p>
 <hr>
 <p>似乎也不是如此，MVC的参数封装似乎都是通过ServletRequestDataBinder的对象进行实现，这个ServletRequestDataBinder extends WebDataBinder。</p>
+<h1 id="参数封装补充细节">参数封装补充细节</h1>
+<p>Handler参数的封装都是通过ArguementSolver进行处理，而ArgumentSolver内部封装了DataBinder，本质上就是调用DataBinder进行参数的封装。</p>
+<p><code>attribute = binder.convertIfNecessary(binder.getTarget(), parameter.getParameterType(), parameter);</code></p>
+<p>普遍的DataBinder内部是通过 <code>getTypeConverter().convertIfNecessary(value, requiredType, methodParam);</code>进行convert，而这个<code>TypeConverter</code>--&gt;SimpleTypeConverter。也就是调用<code>TypeConverterSupport</code>的<code>convertIfNecessary</code>方法进行转换。</p>
+<p><code>getTypeConverter().convertIfNecessary(value, requiredType, methodParam);</code></p>
+<p>大多数情况这个TypeConverter，其实就是<code>SimpleTypeConverter</code>，通过这个TypeConverter根据不同的情况调用PropertyEditor或者ConverterService进行转换。</p>
+<pre><code class="language-java">	/**
+	 * 这个SimpleTypeConverter其实就是已经封装了convertService进去，可供使用。
+	 * Return this binder's underlying SimpleTypeConverter.
+	 */
+	protected SimpleTypeConverter getSimpleTypeConverter() {
+		if (this.typeConverter == null) {
+			this.typeConverter = new SimpleTypeConverter();
+			if (this.conversionService != null) {
+				this.typeConverter.setConversionService(this.conversionService);
+			}
+		}
+		return this.typeConverter;
+	}
+
+public class SimpleTypeConverter extends TypeConverterSupport {
+
+	public SimpleTypeConverter() {
+		this.typeConverterDelegate = new TypeConverterDelegate(this);
+		registerDefaultEditors();
+	}
+
+}
+</code></pre>
 <pre><code class="language-java">MethodArugementResolve-&gt;resolveArgument-&gt;
 // 竟然是在这里处理的@initBinder
 // 而且处理流程也比较魔幻..
