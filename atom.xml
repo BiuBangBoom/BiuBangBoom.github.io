@@ -2,13 +2,71 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Deladelappp</title>
-    <updated>2020-12-04T15:36:17.852Z</updated>
+    <updated>2021-02-05T06:17:44.450Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
     <logo>https://biubangboom.github.io/images/avatar.png</logo>
     <icon>https://biubangboom.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2020, Deladelappp</rights>
+    <rights>All rights reserved 2021, Deladelappp</rights>
+    <entry>
+        <title type="html"><![CDATA[围绕Thread的一些易混淆类]]></title>
+        <id>https://biubangboom.github.io/post/wei-rao-thread-de-yi-xie-yi-hun-yao-lei/</id>
+        <link href="https://biubangboom.github.io/post/wei-rao-thread-de-yi-xie-yi-hun-yao-lei/">
+        </link>
+        <updated>2021-02-05T06:16:05.000Z</updated>
+        <content type="html"><![CDATA[<p>关于线程相关容易混淆的概念</p>
+<p>遇到了一系列关于线程的名词，说不清楚。</p>
+<ul>
+<li>Thread</li>
+<li>ThreadGroup</li>
+<li>ThreadFactory</li>
+<li>DefaultThreadFactory</li>
+<li>Executor</li>
+<li>ExecutorService</li>
+<li>Executors</li>
+<li>ThreadPoolExecutor</li>
+</ul>
+<h1 id="thread">Thread</h1>
+<p>这个就是线程，没有什么要说太多的？</p>
+<h1 id="threadgroup">ThreadGroup</h1>
+<p>线程所在的组。</p>
+<p>其实每个线程都有所属的ThreadGroup，用于管理线程/线程管理。</p>
+<p>即便是直接<code>new Thread(()-&gt;{}).start()</code>的线程，也会有归属的ThreadGroup。<br>
+也可在<code>new Thread(ThreadGroup group)</code>手动传入线程组。</p>
+<p>同时发现，线程组也有层级结构。</p>
+<h1 id="threadfactory">ThreadFactory</h1>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gncmshf5s7j30l90ccwfw.jpg" alt="image-20210205135155023" loading="lazy"></figure>
+<p>为接口，功能为创建线程。</p>
+<h2 id="defaultthreadfactory">DefaultThreadFactory</h2>
+<p>ThreadFactory常用的默认实现类。</p>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gncmsld173j31350hv0v7.jpg" alt="image-20210205135352707" loading="lazy"></figure>
+<p>与直接<code>new Thread()</code>的差别是什么呢..</p>
+<p>其实没有发现太大的差别，可能是创建的时候传入了一些统一的线程参数以及信息。</p>
+<blockquote>
+<p>整个线程工厂产生的线程具有相同的group、namePrefix.</p>
+<p>from csdn。</p>
+</blockquote>
+<h1 id="executor">Executor</h1>
+<p>执行器，也是一个简单的接口而已。</p>
+<p>所以只是一个接口罢了，但通过接口可大概猜测内部实现维护了一个线程池（集合），用于执行(execute)传入的任务。</p>
+<figure data-type="image" tabindex="3"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gncmsp03f9j30v00dc0uv.jpg" alt="image-20210205135445044" loading="lazy"></figure>
+<h2 id="executorservice-extend-executor">ExecutorService extend Executor</h2>
+<p>拓展了一些方法，例如<code>shutdown</code>，<code>isTerminated</code>，还有拓展异步执行<code>submit(Runnable task)</code>。</p>
+<p>常见的实现类：<code>ThreadPoolExecutor。</code></p>
+<h1 id="executors">Executors</h1>
+<p>这个用的其实还比较多，有点类似于线程池的功能，之前其实也学习过。</p>
+<p>内部提供了一些静态方法，用于创建默认的线程池，但这个线程池返回的对象就很有意思了，</p>
+<p>是<code>ExecutorService</code>，没错，正是上方的任务执行器。</p>
+<p>而这个类的实现就是<code>ThreadPoolExecutor</code></p>
+<h1 id="threadpoolexecutor">ThreadPoolExecutor</h1>
+<p>这是一个新的名字，之前似乎没有看到过。</p>
+<p><strong>但这个其实就是调用Exectors返回的ExecutorService的默认实现类。</strong></p>
+<p>也就是说<code>ThreadPoolExecutor extend ExecutorService</code>，用于任务执行与调用。<br>
+（但其实中间还有一层AbstractThreadPoolExecutor，似乎没有做功能的拓展，而是提供了一定的方法默认实现与流程，没有细究。）</p>
+<figure data-type="image" tabindex="4"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gncmsrtee8j30gs0bh0tq.jpg" alt="image-20210205140338499" loading="lazy"></figure>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[ObjectFactory-BeanFactory-FactoryBean]]></title>
         <id>https://biubangboom.github.io/post/objectfactory-beanfactory-factorybean/</id>
