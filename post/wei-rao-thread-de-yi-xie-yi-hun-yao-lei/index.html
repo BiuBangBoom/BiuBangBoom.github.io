@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>围绕Thread的一些易混淆类 | Deladelappp</title>
-<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1612505833956">
+<link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1612517251665">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://biubangboom.github.io//styles/main.css">
 <link rel="alternate" type="application/atom+xml" title="围绕Thread的一些易混淆类 | Deladelappp - Atom Feed" href="https://biubangboom.github.io//atom.xml">
@@ -30,7 +30,7 @@ Execut..." />
       <div class="main-content">
         <div class="site-header">
   <a href="https://biubangboom.github.io/">
-  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1612505833956" alt="">
+  <img class="avatar" src="https://biubangboom.github.io//images/avatar.png?v=1612517251665" alt="">
   </a>
   <h1 class="site-title">
     Deladelappp
@@ -129,6 +129,8 @@ Execut..." />
 <p>整个线程工厂产生的线程具有相同的group、namePrefix.</p>
 <p>from csdn。</p>
 </blockquote>
+<p>java.nio以及io.netty中都有这个DefaultThreadFactory类，主要作用似乎都是绑定namePrefix。（新建线程的名字前缀）<br>
+其中io.netty中的DefaultThreadFactory更加强大，添加了对匿名内部类的支持。</p>
 <h1 id="executor">Executor</h1>
 <p>执行器，也是一个简单的接口而已。</p>
 <p>所以只是一个接口罢了，但通过接口可大概猜测内部实现维护了一个线程池（集合），用于执行(execute)传入的任务。</p>

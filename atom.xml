@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Deladelappp</title>
-    <updated>2021-02-05T06:17:44.450Z</updated>
+    <updated>2021-02-05T09:27:34.314Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -47,6 +47,8 @@
 <p>整个线程工厂产生的线程具有相同的group、namePrefix.</p>
 <p>from csdn。</p>
 </blockquote>
+<p>java.nio以及io.netty中都有这个DefaultThreadFactory类，主要作用似乎都是绑定namePrefix。（新建线程的名字前缀）<br>
+其中io.netty中的DefaultThreadFactory更加强大，添加了对匿名内部类的支持。</p>
 <h1 id="executor">Executor</h1>
 <p>执行器，也是一个简单的接口而已。</p>
 <p>所以只是一个接口罢了，但通过接口可大概猜测内部实现维护了一个线程池（集合），用于执行(execute)传入的任务。</p>
