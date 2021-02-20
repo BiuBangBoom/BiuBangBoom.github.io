@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Deladelappp</title>
-    <updated>2021-02-20T19:12:31.481Z</updated>
+    <updated>2021-02-20T19:16:39.138Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
@@ -50,7 +50,7 @@
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[围绕Thread的一些易混淆类]]></title>
+        <title type="html"><![CDATA[围绕Thread，NIO的一些易混淆类（概念）]]></title>
         <id>https://biubangboom.github.io/post/wei-rao-thread-de-yi-xie-yi-hun-yao-lei/</id>
         <link href="https://biubangboom.github.io/post/wei-rao-thread-de-yi-xie-yi-hun-yao-lei/">
         </link>
@@ -66,6 +66,21 @@
 <li>ExecutorService</li>
 <li>Executors</li>
 <li>ThreadPoolExecutor</li>
+</ul>
+<p>//</p>
+<ul>
+<li>EventExecutorGroup</li>
+<li>EventExecutor</li>
+<li>EventLoopGroup</li>
+<li>EventLoop</li>
+</ul>
+<p>//</p>
+<ul>
+<li>java.util.concurrent.Future</li>
+<li>io.netty.Future</li>
+<li>ChannelFuture</li>
+<li>Promise</li>
+<li>ChannelPromise</li>
 </ul>
 <h1 id="thread">Thread</h1>
 <p>这个就是线程，没有什么要说太多的？</p>
@@ -107,6 +122,170 @@
 <p>也就是说<code>ThreadPoolExecutor extend ExecutorService</code>，用于任务执行与调用。<br>
 （但其实中间还有一层AbstractThreadPoolExecutor，似乎没有做功能的拓展，而是提供了一定的方法默认实现与流程，没有细究。）</p>
 <figure data-type="image" tabindex="4"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gncmsrtee8j30gs0bh0tq.jpg" alt="image-20210205140338499" loading="lazy"></figure>
+<hr>
+<h1 id="nio相关">NIO相关</h1>
+<p>比较想知道所谓的register的含义是什么。</p>
+<h1 id="eventexecutorgroup">EventExecutorGroup</h1>
+<p>所以可以理解为是<code>ExecutorService</code>某一个特定类型（<code>ScheduledExecutorService</code>）的增强版</p>
+<pre><code class="language-java">public interface EventExecutorGroup extends ScheduledExecutorService, Iterable&lt;EventExecutor&gt; {
+  EventExecutor next();
+  Future&lt;?&gt; shutdownGracefully();
+  ...
+}
+</code></pre>
+<p>拓展自<code>ScheduledExecutorService</code>，没错，就是上方描述的<code>ExecutorService</code>，增强了一些功能，例如<code>Future&lt;?&gt; shutdownGracefully()</code>等。</p>
+<p>比较常见的有：<code>MultithreadEventExecutorGroup</code></p>
+<p>而<code>MultithreadEventExecutorGroup</code>的实现类有：<code>MultithreadEventLoopGroup</code></p>
+<figure data-type="image" tabindex="5"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnuljqrofyj30ip0hvad4.jpg" alt="image-20210220034835127" loading="lazy"></figure>
+<h1 id="eventexecutor">EventExecutor</h1>
+<pre><code class="language-java">public interface EventExecutor extends EventExecutorGroup{
+  EventExecutor next();
+  EventExecutorGroup parent();
+  &lt;V&gt; Promise&lt;V&gt; newPromise();
+  boolean inEventLoop();
+  &lt;V&gt; ProgressivePromise&lt;V&gt; newProgressivePromise();
+  &lt;V&gt; Future&lt;V&gt; newSucceededFuture(V result);
+  &lt;V&gt; Future&lt;V&gt; newFailedFuture(Throwable cause);
+}
+</code></pre>
+<figure data-type="image" tabindex="6"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnuljv7lfrj30ii0dzac7.jpg" alt="image-20210220034929045" loading="lazy"></figure>
+<h1 id=""></h1>
+<h1 id="eventloopgroup">EventLoopGroup</h1>
+<p><code>EventLoopGroup extends EventExecutorGroup</code></p>
+<p>提供了register的功能。</p>
+<pre><code class="language-java">public interface EventLoopGroup extends EventExecutorGroup {
+		/**
+     * Return the next {@link EventLoop} to use
+     * ??? 接口竟然也可以进行@Override,修改了返回值.
+     * 接口重写的条件是,返回值可以进行修改,改为更细致的子类.
+     * 在父接口EventExecutorGroup上,EventExecutor next().
+     *
+     * EventLoop extends EventExecutor
+     */
+    @Override
+    EventLoop next();
+
+		/**
+     * Register a {@link Channel} with this {@link EventLoop}.
+     * The returned {@link ChannelFuture} will get notified once the registration was complete.
+     */
+		ChannelFuture register(Channel channel);
+}
+</code></pre>
+<p>继承<code>EventExcutorGroup</code>，再进行一次增强？</p>
+<p>比较常见的有：<code>MultithreadEventLoopGroup</code></p>
+<p>而<code>MultithreadEventLoopGroup</code>的实现类有：<code>NioEventLoopGroup</code></p>
+<figure data-type="image" tabindex="7"><img src="%E5%85%B3%E4%BA%8E%E7%BA%BF%E7%A8%8B%E7%9A%84%E6%B7%B7%E6%B7%86%E6%A6%82%E5%BF%B5/image-20210220034756323.png" alt="image-20210220034756323" loading="lazy"></figure>
+<p><code>EventLoopGroup</code>(以<code>NioEventLoopGroup</code>为例，也是demo中最常见一个EventLoopGroup)，内部维护了一个<code>private final EventExecutor[] childrens;</code></p>
+<p>这个成员变量与EventLoop起了关联，在构造的时候，会根据传入的nThreads数量不同，创建一个不同lenth的 children数组，每一个EventExecutor其实都是一个EventLoop。</p>
+<p><code>NioEventLoopGroup#newChild</code><br>
+<img src="%E5%85%B3%E4%BA%8E%E7%BA%BF%E7%A8%8B%E7%9A%84%E6%B7%B7%E6%B7%86%E6%A6%82%E5%BF%B5/image-20210220134232828.png" alt="image-20210220134232828" loading="lazy"></p>
+<p>由上可知，EventLoopGroup extend EventExcutorGroup，本质上也就是一个ExecutorService，用于执行任务，所以比较关键的还是执行任务的方法<code>submit</code>.</p>
+<pre><code class="language-java">		@Override
+    public &lt;T&gt; Future&lt;T&gt; submit(Callable&lt;T&gt; task) {
+        return next().submit(task);
+    }
+		// next()方法追中至这里
+		@Override
+    public EventExecutor next() {
+        return chooser.next();
+    }
+		private final EventExecutorChooserFactory.EventExecutorChooser chooser;
+		// chooser = chooserFactory.newChooser(children);
+		// chooserFactory = DefaultSelectStrategyFactory.INSTANCE
+</code></pre>
+<p>其实可以得出结论：EventLoopGroup的任务其实是交由EventLoop去执行的。</p>
+<p>再关联回例子中的<code>NioEventLoopGroup</code>中的Child实际类型其实是<code>NioEventLoop</code>,是个<code>SingleThreadEventLoop</code>。</p>
+<p>这里之前的困惑也就解决了：为什么传入的nThread用于指定child数组length，但却说是实际线程数量。</p>
+<ol>
+<li>EventLoopGroup以及EventLoop其实并没有这么说明。</li>
+<li>只是NioEventLoopGroup以及NioEventLoop的一特性。完全可以实现接口，编写一个不符合该规定的实例。</li>
+</ol>
+<p><code>EventLoopGroup</code>中拓展了一<code>register</code>方法，用于与channel进行绑定，相信这一方法也比较重要。</p>
+<pre><code class="language-java">	  /**
+    * Register a {@link Channel} with this {@link EventLoop}.
+    * The returned {@link ChannelFuture} will get notified once the registration was complete.
+    */
+		// 以multithreadEventLoopGroup为例
+		@Override
+    public ChannelFuture register(Channel channel) {
+      	// 这个next()方法在上方有分析，其实就是调用轮训工厂，获取child中的一个EventLoop。
+      	// 在demo中就是SingleThreadEventLoop
+        return next().register(channel);
+    }
+		
+		// singleThreadEventLoop
+		@Override
+    public ChannelFuture register(final ChannelPromise promise) {
+      	// promise = new DefaultChannelPromise(channel, this),this=(NioEventLoopGroup)
+        ObjectUtil.checkNotNull(promise, &quot;promise&quot;);
+        promise.channel().unsafe().register(this, promise); // 这一行其实没明白，也没有明白这个register的作用。
+        return promise;
+    }
+</code></pre>
+<h1 id="eventloop">EventLoop</h1>
+<pre><code class="language-java">/**
+ *
+ * EventLoop extend EventLoopGroup
+ *
+ * Will handle all the I/O operations for a {@link Channel} once registered.
+ *
+ * One {@link EventLoop} instance will usually handle more than one {@link Channel} but this may depend on
+ * implementation details and internals.
+ *
+ */
+</code></pre>
+<figure data-type="image" tabindex="8"><img src="%E5%85%B3%E4%BA%8E%E7%BA%BF%E7%A8%8B%E7%9A%84%E6%B7%B7%E6%B7%86%E6%A6%82%E5%BF%B5/image-20210220210338069.png" alt="image-20210220210338069" loading="lazy"></figure>
+<p>比较有意思的是，<code>EventLoop extend EventLoopGroup</code></p>
+<pre><code class="language-java">public interface EventLoop extends OrderedEventExecutor, EventLoopGroup {
+		@Override
+    EventLoopGroup parent(); // 获取EventLoopGroup
+}
+</code></pre>
+<p>实现类有：：<code>NioEventLoop</code></p>
+<pre><code class="language-java">// 不同于NioEventLoopGroup
+/* public class NioEventLoopGroup extends MultithreadEventLoopGroup{} */
+// 一个是单线程EventLoop，一个是MultithreadEventLoopGroup
+public final class NioEventLoop extends SingleThreadEventLoop{
+  
+}
+
+</code></pre>
+<hr>
+<h1 id="futurejava">Future(java)</h1>
+<p>调用线程异步执行，返回结果。</p>
+<h1 id="futureionetty">Future(io.netty)</h1>
+<p><code>java.util.concurrent.Future</code>的强化版，提供了更方便的功能，</p>
+<ul>
+<li>设置执行完成的监听器</li>
+<li>是否执行完毕，成功，异常等。</li>
+<li>获取结果（等待一定指定时间）</li>
+</ul>
+<h1 id="channelfuture">ChannelFuture</h1>
+<p><code>ChannelFuture extend io.netty.Future</code>，提供了Channel的获取功能。</p>
+<pre><code class="language-java">public interface ChannelFuture extends Future&lt;Void&gt; {
+  Channel channel();
+}
+</code></pre>
+<h1 id="promise">Promise</h1>
+<blockquote>
+<p>许诺，允诺；希望</p>
+</blockquote>
+<pre><code class="language-java">// Special {@link io.netty.Future} which is writable.
+</code></pre>
+<p>似乎是<code>io.netty.Future</code>的强化版，添加了手动修改<code>Future</code>信息的接口，如设置成功，失败等，并调用成功，失败后的监听器。</p>
+<pre><code class="language-java">public interface Promise&lt;V&gt; extends Future&lt;V&gt; {
+  Promise&lt;V&gt; setSuccess(V result);
+  boolean trySuccess(V result);
+  Promise&lt;V&gt; setFailure(Throwable cause);
+  boolean tryFailure(Throwable cause);
+  boolean setUncancellable();
+  // 同时Override了Future的部分方法返回值，将方法返回值更具体化（Future-&gt;Promise）如：
+  Promise&lt;V&gt; addListener(GenericFutureListener&lt;? extends Future&lt;? super V&gt;&gt; listener);
+}
+</code></pre>
+<h1 id="channelpromise">ChannelPromise</h1>
+<p><code>ChannelPromise extend Promise</code>，提供了<code>Channel</code>的获取功能。</p>
 ]]></content>
     </entry>
     <entry>
