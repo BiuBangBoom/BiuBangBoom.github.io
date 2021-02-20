@@ -2,19 +2,17 @@
   <head>
     <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ObjectFactory-BeanFactory-FactoryBean | Deladelappp</title>
+<title>Netty Future实现Listener回调功能 | Deladelappp</title>
 <link rel="shortcut icon" href="https://biubangboom.github.io//favicon.ico?v=1613848346965">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://biubangboom.github.io//styles/main.css">
-<link rel="alternate" type="application/atom+xml" title="ObjectFactory-BeanFactory-FactoryBean | Deladelappp - Atom Feed" href="https://biubangboom.github.io//atom.xml">
+<link rel="alternate" type="application/atom+xml" title="Netty Future实现Listener回调功能 | Deladelappp - Atom Feed" href="https://biubangboom.github.io//atom.xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
-    <meta name="description" content="推荐参考资料：https://fangshixiang.blog.csdn.net/article/details/85067006
-BeanFactory ApplicationContext
-BeanFactory：bean工厂
-App..." />
+    <meta name="description" content="public static void main(String[] args) throws InterruptedException {
+        final ExecutorService executor = Executors...." />
     <meta name="keywords" content="" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
     <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
@@ -77,66 +75,59 @@ App..." />
         <div class="post-detail">
           <article class="post">
             <h2 class="post-title">
-              ObjectFactory-BeanFactory-FactoryBean
+              Netty Future实现Listener回调功能
             </h2>
             <div class="post-info">
               <span>
-                2020-12-04
+                2021-02-21
               </span>
               <span>
-                2 min read
+                1 min read
               </span>
               
             </div>
             
             <div class="post-content-wrapper">
               <div class="post-content">
-                <p>推荐参考资料：https://fangshixiang.blog.csdn.net/article/details/85067006</p>
-<h1 id="beanfactory-applicationcontext">BeanFactory ApplicationContext</h1>
-<p>BeanFactory：bean工厂<br>
-ApplicationContext：可以理解为强化的BeanFactory，提供了BeanFactory的功能外，还提供了MessageSource，事务等功能。</p>
-<blockquote>
-<p><em>ApplicationContext包含BeanFactory的所有功能，通常建议比BeanFactory优先。</em></p>
-<p>ApplicationContext以一种<strong>更向面向框架的方式工作以及对上下文进行分层和实现继承</strong>，ApplicationContext包还提供了以下的功能：</p>
-<ul>
-<li>MessageSource, 提供国际化的消息访问</li>
-<li>资源访问，如URL和文件</li>
-<li>事件传播</li>
-<li>载入多个（有继承关系）上下文 ，使得每一个上下文都专<strong>注于一个特定的层次</strong>，比如应用的web层;</li>
-</ul>
-</blockquote>
-<hr>
-<h1 id="factorybean-objectfactory">FactoryBean ObjectFactory</h1>
-<p>还是比较有意思的点，但目前没有追踪Spring是如何对这两个类进行处理的，特别的ObjectFactory，是如何处理出Scope这一环境。</p>
-<h2 id="factorybean">FactoryBean</h2>
-<blockquote>
-<p>这是个特殊的 Bean 他是个工厂 Bean，可以产生 Bean 的 Bean</p>
-</blockquote>
-<p>使用其实也比较简单，将FactoryBean交由Spring管理即可，Spring会根据FactoryBean的属性（单例多例等），创建对应的Bean。</p>
-<p>所以可以直接注入FactoryBean对应的Bean。</p>
-<h2 id="objectfactory">ObjectFactory</h2>
-<p>不同于FactoryBean可以直接通过Spring获取对应的bean，<code>ObjectFactory</code>需要通过Spring注入后，再进行get操作获取bean。</p>
-<p>使用情况更多是与与Scope绑定，如<code>WebApplicationContextUtils#registerWebApplicationScopes()</code>中，注入了如Session、Request等ObjectFactory。</p>
-<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/0081Kckwgy1glbpmuhy21j30za0j6jwm.jpg" alt="image-20201204122743075" loading="lazy"></figure>
-<pre><code class="language-java">	// @Resource ByName注入
-	@Resource
-	private ObjectFactory&lt;ServletRequest&gt; requestObjectFactory;
+                <pre><code class="language-java">public static void main(String[] args) throws InterruptedException {
+        final ExecutorService executor = Executors.newFixedThreadPool(1);
+        EventExecutor eventExecutor = new DefaultEventExecutor(executor);
 
-	void method(){
-    ServletRequest request = requestObjectFactory.getObject();
-  }
+        final Future&lt;String&gt; futureResult = eventExecutor.submit(new Callable&lt;String&gt;() {
+            @Override
+            public String call() throws Exception {
+                return &quot;hello world&quot;;
+            }
+        });
+        futureResult.addListener(future -&gt; {
+            if(future.isSuccess()){
+                System.out.println(&quot;future get::&quot; + future.get());
+            } else if(future.isCancelled()) {
+                System.out.println(&quot;task cancelled&quot;);
+            } else if(future.cause() != null){
+                System.out.println(&quot;exception catch..&quot; + future.cause().getMessage());
+            }
+        });
+    }
 </code></pre>
+<p>想知道Netty是如何实现任务完成后，回调Listener的。</p>
+<hr>
+<h1 id="将任务包装并添加进队列">将任务包装并添加进队列。</h1>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulihzealj30vo0jsq6a.jpg" alt="image-20210221001910915" loading="lazy"></figure>
+<h1 id="获取队列中的任务并执行">获取队列中的任务并执行</h1>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulilcvc8j315u0p0jxr.jpg" alt="image-20210221004237462" loading="lazy"></figure>
+<h1 id="关键">关键</h1>
+<p>自定义的任务在submit的时候被包装过，包装成了<code>PromiseTask</code>。</p>
+<figure data-type="image" tabindex="3"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulioh85hj30mp09lgmg.jpg" alt="image-20210221004453444" loading="lazy"></figure>
+<p>所以在任务进行run的时候，执行的是被包装过的PromiseTask的run()，除了执行本身的任务外，还将调用<code>setSuccessInternal(Future future)</code>方法进行通知Listener。</p>
+<figure data-type="image" tabindex="4"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulir86vkj30wj092jsw.jpg" alt="image-20210221004817186" loading="lazy"></figure>
 
               </div>
               <div class="toc-container">
                 <ul class="markdownIt-TOC">
-<li><a href="#beanfactory-applicationcontext">BeanFactory ApplicationContext</a></li>
-<li><a href="#factorybean-objectfactory">FactoryBean ObjectFactory</a>
-<ul>
-<li><a href="#factorybean">FactoryBean</a></li>
-<li><a href="#objectfactory">ObjectFactory</a></li>
-</ul>
-</li>
+<li><a href="#%E5%B0%86%E4%BB%BB%E5%8A%A1%E5%8C%85%E8%A3%85%E5%B9%B6%E6%B7%BB%E5%8A%A0%E8%BF%9B%E9%98%9F%E5%88%97">将任务包装并添加进队列。</a></li>
+<li><a href="#%E8%8E%B7%E5%8F%96%E9%98%9F%E5%88%97%E4%B8%AD%E7%9A%84%E4%BB%BB%E5%8A%A1%E5%B9%B6%E6%89%A7%E8%A1%8C">获取队列中的任务并执行</a></li>
+<li><a href="#%E5%85%B3%E9%94%AE">关键</a></li>
 </ul>
 
               </div>
@@ -147,9 +138,9 @@ ApplicationContext：可以理解为强化的BeanFactory，提供了BeanFactory�
         
           <div class="next-post">
             <div class="next">下一篇</div>
-            <a href="https://biubangboom.github.io/post/spring-mvc-handler-can-shu-feng-zhuang/">
+            <a href="https://biubangboom.github.io/post/wei-rao-thread-de-yi-xie-yi-hun-yao-lei/">
               <h3 class="post-title">
-                Spring MVC Handler参数封装
+                围绕Thread的一些易混淆类
               </h3>
             </a>
           </div>

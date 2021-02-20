@@ -2,13 +2,53 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://biubangboom.github.io/</id>
     <title>Deladelappp</title>
-    <updated>2021-02-05T09:27:34.314Z</updated>
+    <updated>2021-02-20T19:12:31.481Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://biubangboom.github.io/"/>
     <link rel="self" href="https://biubangboom.github.io/atom.xml"/>
     <logo>https://biubangboom.github.io/images/avatar.png</logo>
     <icon>https://biubangboom.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, Deladelappp</rights>
+    <entry>
+        <title type="html"><![CDATA[Netty Future实现Listener回调功能]]></title>
+        <id>https://biubangboom.github.io/post/netty-future-shi-xian-listener-hui-diao-gong-neng/</id>
+        <link href="https://biubangboom.github.io/post/netty-future-shi-xian-listener-hui-diao-gong-neng/">
+        </link>
+        <updated>2021-02-20T19:12:00.000Z</updated>
+        <content type="html"><![CDATA[<pre><code class="language-java">public static void main(String[] args) throws InterruptedException {
+        final ExecutorService executor = Executors.newFixedThreadPool(1);
+        EventExecutor eventExecutor = new DefaultEventExecutor(executor);
+
+        final Future&lt;String&gt; futureResult = eventExecutor.submit(new Callable&lt;String&gt;() {
+            @Override
+            public String call() throws Exception {
+                return &quot;hello world&quot;;
+            }
+        });
+        futureResult.addListener(future -&gt; {
+            if(future.isSuccess()){
+                System.out.println(&quot;future get::&quot; + future.get());
+            } else if(future.isCancelled()) {
+                System.out.println(&quot;task cancelled&quot;);
+            } else if(future.cause() != null){
+                System.out.println(&quot;exception catch..&quot; + future.cause().getMessage());
+            }
+        });
+    }
+</code></pre>
+<p>想知道Netty是如何实现任务完成后，回调Listener的。</p>
+<hr>
+<h1 id="将任务包装并添加进队列">将任务包装并添加进队列。</h1>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulihzealj30vo0jsq6a.jpg" alt="image-20210221001910915" loading="lazy"></figure>
+<h1 id="获取队列中的任务并执行">获取队列中的任务并执行</h1>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulilcvc8j315u0p0jxr.jpg" alt="image-20210221004237462" loading="lazy"></figure>
+<h1 id="关键">关键</h1>
+<p>自定义的任务在submit的时候被包装过，包装成了<code>PromiseTask</code>。</p>
+<figure data-type="image" tabindex="3"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulioh85hj30mp09lgmg.jpg" alt="image-20210221004453444" loading="lazy"></figure>
+<p>所以在任务进行run的时候，执行的是被包装过的PromiseTask的run()，除了执行本身的任务外，还将调用<code>setSuccessInternal(Future future)</code>方法进行通知Listener。</p>
+<figure data-type="image" tabindex="4"><img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gnulir86vkj30wj092jsw.jpg" alt="image-20210221004817186" loading="lazy"></figure>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[围绕Thread的一些易混淆类]]></title>
         <id>https://biubangboom.github.io/post/wei-rao-thread-de-yi-xie-yi-hun-yao-lei/</id>
